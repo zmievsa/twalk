@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from io import TextIOWrapper
 import logging
 from pathlib import Path
@@ -22,25 +22,18 @@ logger.setLevel(logging.WARNING)
 
 
 def main(argv: Optional[Sequence[str]] = None):
-    parser = ArgumentParser(
-        PROG,
-        description="Condense a directory tree into a single txt file or extract it from one",
-    )
-
-    parser.add_argument("mode", choices=(PACK_MODE, UNPACK_MODE), help="What to do with the specified path")
-    parser.add_argument("path", type=Path, help="path to directory you wish to (un)pack")
-    parser.add_argument("-V", "--verbose", action="store_true", default=False)
-    parser.add_argument("-v", "--version", action="store_true", default=False)
-
-    args = parser.parse_args(argv)
+    args = _parse_args(argv)
     if args.version:
         print(__version__)
         exit(0)
-    if args.verbose:
+    if args.silent:
+        logger.disabled = True
+    elif args.verbose:
         logger.setLevel(logging.DEBUG)
 
     mode: str = args.mode
     path: Path = args.path.resolve()
+    ignore_binary: bool = args.ignore_binary
 
     if mode == UNPACK_MODE:
         if not path.is_file():
@@ -50,7 +43,7 @@ def main(argv: Optional[Sequence[str]] = None):
         if not path.is_dir():
             raise ValueError(f"{path} is not a directory.")
         try:
-            _new_pack(path)
+            _new_pack(path, ignore_binary)
         except ValueError as e:
             raise ValueError(
                 """
@@ -64,22 +57,61 @@ def main(argv: Optional[Sequence[str]] = None):
             ) from e
 
 
-def _new_pack(dir_to_archive: Path):
+def _parse_args(argv: Optional[Sequence[str]]) -> Namespace:
+    parser = ArgumentParser(
+        PROG,
+        description="Condense a directory tree into a single txt file or extract it from one",
+    )
+
+    parser.add_argument("mode", choices=(PACK_MODE, UNPACK_MODE), help="What to do with the specified path")
+    parser.add_argument("path", type=Path, help="path to directory you wish to (un)pack")
+    parser.add_argument(
+        "-i",
+        "--ignore_binary",
+        action="store_true",
+        default=False,
+        help="Instead of raising an exception when encountering binary files during packing, skip them altogether",
+    )
+    parser.add_argument("-v", "--version", action="store_true", default=False)
+
+    logging_group = parser.add_mutually_exclusive_group()
+    logging_group.add_argument("-V", "--verbose", action="store_true", default=False)
+    logging_group.add_argument("-s", "--silent", action="store_true", default=False)
+
+    return parser.parse_args(argv)
+
+
+def _new_pack(dir_to_archive: Path, ignore_binary: bool):
     output_file_path = _get_non_existing_path(dir_to_archive.with_suffix(".txt"))
-    with output_file_path.open("w") as output:
-        _pack_dir(dir_to_archive, output)
+    try:
+        with output_file_path.open("w") as output:
+            _pack_dir(dir_to_archive, output, ignore_binary)
+    except Exception as e:
+        if output_file_path.exists():
+            output_file_path.unlink()
+        raise e
 
 
-def _pack_dir(dir_to_archive: Path, output: TextIOWrapper):
+def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool):
     output.write(f"{BEGIN_DIR}{Path(dir_to_archive).name}")
     for path in dir_to_archive.iterdir():
         if path.is_dir():
-            _pack_dir(path, output)
+            _pack_dir(path, output, ignore_binary)
         elif path.is_file():
-            output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
+            _write_file_to_output(output, path, ignore_binary)
         else:
-            logger.warn(f"Path type of '{path}' is not supported. Skipping.")
+            logger.warning(f"Path type of '{path}' is not supported. Skipping.")
     output.write(END_DIR)
+
+
+def _write_file_to_output(output: TextIOWrapper, path: Path, ignore_binary: bool):
+    if ignore_binary:
+        try:
+            output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
+        except UnicodeDecodeError:
+            logger.warning(f"Skipping binary file '{path}'")
+    else:
+        output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
 
 
 def _new_unpack(file_to_unarchive: Path):
