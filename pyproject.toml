@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "twalk"
-version = "1.0.10"
+version = "1.0.11"
 description = "Condense a directory tree into a single txt file or extract it from one"
 authors = ["Ovsyanka <szmiev2000@gmail.com>"]
 license = "MIT"

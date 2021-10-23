@@ -9,10 +9,14 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.10"
+__version__ = "1.0.11"
 
 # labels for unarchivation
-LABEL_PREFIX = "182hbgovrj1l,lvlpmr3u9p420"
+
+# Because we do not sanitize inputs, if twalk tries to unpack itself,
+# it will encounter label prefix in a place where it shouldn't be.
+# Hence we need this little hack te prevent that.
+LABEL_PREFIX = "182hbgovrj1l," + "lvlpmr3u9p420"
 BEGIN_DIR_SUFFIX, END_DIR_SUFFIX, FILE_NAME_SUFFIX, BEGIN_FILE_SUFFIX, END_FILE_SUFFIX = (str(i) for i in range(1, 6))
 BEGIN_DIR, END_DIR, FILE_NAME, BEGIN_FILE, END_FILE = (LABEL_PREFIX + str(i) for i in range(1, 6))
 
