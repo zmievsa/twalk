@@ -9,7 +9,7 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.5"
+__version__ = "1.0.10"
 
 # labels for unarchivation
 LABEL_PREFIX = "182hbgovrj1l,lvlpmr3u9p420"
@@ -23,9 +23,6 @@ logger.setLevel(logging.WARNING)
 
 def main(argv: Optional[Sequence[str]] = None):
     args = _parse_args(argv)
-    if args.version:
-        print(__version__)
-        exit(0)
     if args.silent:
         logger.disabled = True
     elif args.verbose:
@@ -72,7 +69,7 @@ def _parse_args(argv: Optional[Sequence[str]]) -> Namespace:
         default=False,
         help="Instead of raising an exception when encountering\n binary files during packing, skip them altogether",
     )
-    parser.add_argument("-v", "--version", action="store_true", default=False)
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     logging_group = parser.add_mutually_exclusive_group()
     logging_group.add_argument("-V", "--verbose", action="store_true", default=False)

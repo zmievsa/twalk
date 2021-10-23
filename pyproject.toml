@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "twalk"
-version = "1.0.5"
+version = "1.0.10"
 description = "Condense a directory tree into a single txt file or extract it from one"
 authors = ["Ovsyanka <szmiev2000@gmail.com>"]
 license = "MIT"
@@ -14,7 +14,7 @@ python = "^3.6"
 [tool.poetry.dev-dependencies]
 
 [tool.poetry.scripts]
-cli_command_name = 'twalk:main'
+twalk = 'twalk:main'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
