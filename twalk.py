@@ -7,19 +7,16 @@ class Path(type(ImportedPath())):
     def with_stem(self, stem) -> "Path":
         return self.with_name(stem + self.suffix)
 
-from typing import Optional, Sequence, Tuple
+from typing import Iterator, Optional, Sequence
 from typing_extensions import Literal
 
 PROG = "twalk"
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 # labels for unarchivation
 LABEL_PREFIX = "182hbgovrj1l,lvlpmr3u9p420"
-BEGIN_DIR = LABEL_PREFIX + "OPEN_DIR"
-END_DIR = LABEL_PREFIX + "END_DIR"
-FILE_NAME = LABEL_PREFIX + "FILE_NAME"
-BEGIN_FILE = LABEL_PREFIX + "FILE_BEGIN"
-END_FILE = LABEL_PREFIX + "FILE_END"
+BEGIN_DIR_SUFFIX, END_DIR_SUFFIX, FILE_NAME_SUFFIX, BEGIN_FILE_SUFFIX, END_FILE_SUFFIX = (str(i) for i in range(1, 6))
+BEGIN_DIR, END_DIR, FILE_NAME, BEGIN_FILE, END_FILE = (LABEL_PREFIX + str(i) for i in range(1, 6))
 
 
 logger = logging.getLogger(PROG)
@@ -80,37 +77,27 @@ def _pack(dir_to_archive: Path, output: TextIOWrapper):
 
 
 def _new_unpack(file_to_unarchive: Path):
-    _unpack(file_to_unarchive.read_text(), file_to_unarchive.parent)
+    iterator = iter(file_to_unarchive.read_text().split(LABEL_PREFIX))
+    next(iterator) # The first element will be empty string
+    _unpack_dir(next(iterator), iterator, file_to_unarchive.parent)
 
 
-def _unpack(text: str, root: Path) -> str:
-    text = remove_prefix(text, BEGIN_DIR)
-    dir_name, text = pop_data(text)
+def _unpack_dir(current_token: str, tokens: Iterator[str], root: Path):
+    dir_name = current_token[1:]
     root = root / dir_name
     root.mkdir()
-    while not text.startswith(END_DIR):
-        if text.startswith(BEGIN_DIR):
-            text = _unpack(text, root)
+    current_token = next(tokens)
+    while not current_token.startswith(END_DIR_SUFFIX):
+        if current_token.startswith(BEGIN_DIR_SUFFIX):
+            _unpack_dir(current_token, tokens, root)
 
-        elif text.startswith(FILE_NAME):
-            text = remove_prefix(text, FILE_NAME)
-            fname, text = pop_data(text)
-            text = remove_prefix(text, BEGIN_FILE)
+        elif current_token.startswith(FILE_NAME_SUFFIX):
+            fname = current_token[1:]
             fpath = root / fname
-            data, text = pop_data(text)
+            data = next(tokens)[1:] # BEGIN_FILE
             fpath.write_text(data)
-            text = remove_prefix(text, END_FILE)
-    text = remove_prefix(text, END_DIR)
-    return text
-
-
-def remove_prefix(s: str, prefix: str) -> str:
-    return s[len(prefix) :]
-
-
-def pop_data(s: str) -> Tuple[str, str]:
-    data = s[: s.find(LABEL_PREFIX)]
-    return data, s[len(data) :]
+            next(tokens) # END FILE
+        current_token = next(tokens) # Token after END_FILE/END_DIR
 
 
 def _get_output_file_path(path: Path) -> Path:
