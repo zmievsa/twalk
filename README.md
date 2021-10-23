@@ -1,6 +1,10 @@
 # Features
 twalk packs an entire directory tree (including files) into a single .txt file, which it then can use to regenerate that directory tree.
 
+
+# Installation
+`pip install twalk`
+
 # Usage
 ```
 usage: twalk [-h] [-i] [-v] [-V | -s] {pack,unpack} path
@@ -13,7 +17,8 @@ positional arguments:
 
 optional arguments:
   -h, --help           show this help message and exit
-  -i, --ignore_binary  Instead of raising an exception when encountering binary files during packing, skip them altogether
+  -i, --ignore_binary  Instead of raising an exception when encountering
+                       binary files during packing, skip them altogether
   -v, --version
   -V, --verbose
   -s, --silent

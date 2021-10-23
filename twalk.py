@@ -9,7 +9,7 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.1"
+__version__ = "1.0.5"
 
 # labels for unarchivation
 LABEL_PREFIX = "182hbgovrj1l,lvlpmr3u9p420"
@@ -70,7 +70,7 @@ def _parse_args(argv: Optional[Sequence[str]]) -> Namespace:
         "--ignore_binary",
         action="store_true",
         default=False,
-        help="Instead of raising an exception when encountering binary files during packing, skip them altogether",
+        help="Instead of raising an exception when encountering\n binary files during packing, skip them altogether",
     )
     parser.add_argument("-v", "--version", action="store_true", default=False)
 
