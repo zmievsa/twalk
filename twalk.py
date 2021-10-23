@@ -40,7 +40,7 @@ def main(argv: Optional[Sequence[str]] = None):
         logger.setLevel(logging.DEBUG)
 
     mode: str = args.mode
-    path: Path = args.path
+    path: Path = args.path.resolve()
 
     if mode == UNPACK_MODE:
         if not path.is_file():
@@ -53,12 +53,13 @@ def main(argv: Optional[Sequence[str]] = None):
             _new_pack(path)
         except ValueError as e:
             raise ValueError(
-                """I do not and will not support binary or any other strange files.
-                   You see, this script might be used to circumvent some security measures
-                   and I'm fine with that as long as security measures do not make sense
-                   in your case. However, if you try to pack binary files, then I completely
-                   agree with security measures and believe that you should not be able to 
-                   hide them in a txt file.
+                """
+                I do not and will not support binary or any other strange files.
+                You see, this script might be used to circumvent some security measures
+                and I'm fine with that as long as security measures do not make sense
+                in your case. However, if you try to pack binary files, then I completely
+                agree with security measures and believe that you should not be able to 
+                hide them in a txt file.
                 """
             ) from e
 
