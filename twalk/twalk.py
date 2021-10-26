@@ -9,7 +9,7 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.11"
+__version__ = "1.0.12"
 
 # labels for unarchivation
 
@@ -22,7 +22,7 @@ BEGIN_DIR, END_DIR, FILE_NAME, BEGIN_FILE, END_FILE = (LABEL_PREFIX + str(i) for
 
 
 logger = logging.getLogger(PROG)
-logger.setLevel(logging.WARNING)
+logging.basicConfig(level=logging.WARNING, handlers=[logging.StreamHandler()])
 
 
 def main(argv: Optional[Sequence[str]] = None):
@@ -35,12 +35,12 @@ def main(argv: Optional[Sequence[str]] = None):
     mode: str = args.mode
     path: Path = args.path.resolve()
     ignore_binary: bool = args.ignore_binary
-
     if mode == UNPACK_MODE:
         if not path.is_file():
             raise ValueError(f"{path} is not a file.")
         _new_unpack(path)
     elif mode == PACK_MODE:
+        logger.debug(f"ROOT PATH: {path}")
         if not path.is_dir():
             raise ValueError(f"{path} is not a directory.")
         try:
@@ -83,7 +83,8 @@ def _parse_args(argv: Optional[Sequence[str]]) -> Namespace:
 
 
 def _new_pack(dir_to_archive: Path, ignore_binary: bool):
-    output_file_path = _get_non_existing_path(dir_to_archive.with_suffix(".txt"))
+    # Pathlib counts any dot as a suffix
+    output_file_path = _get_non_existing_path(dir_to_archive.with_name(f"{dir_to_archive.name}.txt"))
     try:
         with output_file_path.open("w") as output:
             _pack_dir(dir_to_archive, output, ignore_binary)
@@ -94,6 +95,7 @@ def _new_pack(dir_to_archive: Path, ignore_binary: bool):
 
 
 def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool):
+    logger.debug(f"PACKING DIR: {dir_to_archive}'")
     output.write(f"{BEGIN_DIR}{Path(dir_to_archive).name}")
     for path in dir_to_archive.iterdir():
         if path.is_dir():
@@ -137,6 +139,7 @@ def _unpack_dir(current_token: str, tokens: Iterator[str], root: Path):
 
 
 def _get_non_existing_path(path: Path) -> Path:
+    logger.debug(f"GETTING NON-EXISTING PATH FOR '{path}'")
     output_path: Path = path
     i: int = 1
     while output_path.exists():
