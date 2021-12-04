@@ -9,23 +9,22 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.12"
+__version__ = "1.0.13"
 
 # labels for unarchivation
 
-# Because we do not sanitize inputs, if twalk tries to unpack itself,
-# it will encounter label prefix in a place where it shouldn't be.
-# Hence we need this little hack te prevent that.
-LABEL_PREFIX = "182hbgovrj1l," + "lvlpmr3u9p420"
-BEGIN_DIR_SUFFIX, END_DIR_SUFFIX, FILE_NAME_SUFFIX, BEGIN_FILE_SUFFIX, END_FILE_SUFFIX = (str(i) for i in range(1, 6))
-BEGIN_DIR, END_DIR, FILE_NAME, BEGIN_FILE, END_FILE = (LABEL_PREFIX + str(i) for i in range(1, 6))
+# We hope that this character never appears in source code
+LABEL_PREFIX = "\u2042"
+__suffixes = [str(i) for i in range(1, 6)]
+BEGIN_DIR_SUFFIX, END_DIR_SUFFIX, FILE_NAME_SUFFIX, BEGIN_FILE_SUFFIX, END_FILE_SUFFIX = __suffixes
+BEGIN_DIR, END_DIR, FILE_NAME, BEGIN_FILE, END_FILE = (LABEL_PREFIX + s for s in __suffixes)
 
 
 logger = logging.getLogger(PROG)
 logging.basicConfig(level=logging.WARNING, handlers=[logging.StreamHandler()])
 
 
-def main(argv: Optional[Sequence[str]] = None):
+def main(argv: Optional[Sequence[str]] = None) -> None:
     args = _parse_args(argv)
     if args.silent:
         logger.disabled = True
@@ -82,11 +81,11 @@ def _parse_args(argv: Optional[Sequence[str]]) -> Namespace:
     return parser.parse_args(argv)
 
 
-def _new_pack(dir_to_archive: Path, ignore_binary: bool):
+def _new_pack(dir_to_archive: Path, ignore_binary: bool) -> None:
     # Pathlib counts any dot as a suffix
     output_file_path = _get_non_existing_path(dir_to_archive.with_name(f"{dir_to_archive.name}.txt"))
     try:
-        with output_file_path.open("w") as output:
+        with output_file_path.open("w", encoding="utf-8") as output:
             _pack_dir(dir_to_archive, output, ignore_binary)
     except Exception as e:
         if output_file_path.exists():
@@ -94,7 +93,7 @@ def _new_pack(dir_to_archive: Path, ignore_binary: bool):
         raise e
 
 
-def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool):
+def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool) -> None:
     logger.debug(f"PACKING DIR: {dir_to_archive}'")
     output.write(f"{BEGIN_DIR}{Path(dir_to_archive).name}")
     for path in dir_to_archive.iterdir():
@@ -107,7 +106,7 @@ def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool):
     output.write(END_DIR)
 
 
-def _write_file_to_output(output: TextIOWrapper, path: Path, ignore_binary: bool):
+def _write_file_to_output(output: TextIOWrapper, path: Path, ignore_binary: bool) -> None:
     if ignore_binary:
         try:
             output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
@@ -117,13 +116,13 @@ def _write_file_to_output(output: TextIOWrapper, path: Path, ignore_binary: bool
         output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
 
 
-def _new_unpack(file_to_unarchive: Path):
-    tokens = iter(file_to_unarchive.read_text().split(LABEL_PREFIX))
+def _new_unpack(file_to_unarchive: Path) -> None:
+    tokens = iter(file_to_unarchive.read_text(encoding="utf-8").split(LABEL_PREFIX))
     next(tokens)  # The first element will be empty string because file starts with DIR_OPEN
     _unpack_dir(next(tokens), tokens, file_to_unarchive.parent)
 
 
-def _unpack_dir(current_token: str, tokens: Iterator[str], root: Path):
+def _unpack_dir(current_token: str, tokens: Iterator[str], root: Path) -> None:
     root = _get_non_existing_path(root / current_token[1:])
     root.mkdir()
     current_token = next(tokens)

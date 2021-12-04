@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "twalk"
-version = "1.0.12"
+version = "1.0.13"
 description = "Condense a directory tree into a single txt file or extract it from one"
 authors = ["Ovsyanka <szmiev2000@gmail.com>"]
 license = "MIT"
-readme  = "README.md"
+readme = "README.md"
 homepage = "https://github.com/Ovsyanka83/twalk"
 repository = "https://github.com/Ovsyanka83/twalk"
 
