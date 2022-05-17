@@ -9,7 +9,7 @@ from typing import Iterator, Optional, Sequence
 PROG = "twalk"
 PACK_MODE = "pack"
 UNPACK_MODE = "unpack"
-__version__ = "1.0.13"
+__version__ = "1.0.14"
 
 # labels for unarchivation
 
@@ -109,11 +109,11 @@ def _pack_dir(dir_to_archive: Path, output: TextIOWrapper, ignore_binary: bool) 
 def _write_file_to_output(output: TextIOWrapper, path: Path, ignore_binary: bool) -> None:
     if ignore_binary:
         try:
-            output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
+            output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text(encoding='utf-8')}{END_FILE}")
         except UnicodeDecodeError:
             logger.warning(f"Skipping binary file '{path}'")
     else:
-        output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text()}{END_FILE}")
+        output.write(f"{FILE_NAME}{path.name}{BEGIN_FILE}{path.read_text(encoding='utf-8')}{END_FILE}")
 
 
 def _new_unpack(file_to_unarchive: Path) -> None:
@@ -132,7 +132,7 @@ def _unpack_dir(current_token: str, tokens: Iterator[str], root: Path) -> None:
 
         elif current_token.startswith(FILE_NAME_SUFFIX):
             fpath = root / current_token[1:]  # FILE_NAME (name)
-            fpath.write_text(next(tokens)[1:])  # BEGIN_FILE (contents)
+            fpath.write_text(next(tokens)[1:], encoding="utf-8")  # BEGIN_FILE (contents)
             next(tokens)  # END FILE
         current_token = next(tokens)  # Token after END_FILE/END_DIR
 
